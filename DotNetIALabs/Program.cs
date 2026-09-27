@@ -1,30 +1,52 @@
-﻿using Microsoft.Extensions.AI;
-using OllamaSharp;
+﻿using DotNetIALabs.Infrastructure;
+using DotNetIALabs.Presentation;
+using DotNetIALabs.Application;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
-
-IChatClient chatClient = new OllamaApiClient("http://localhost:11434/", "qwen2.5:0.5b");
-
-List<ChatMessage> chatHistory = new();
-
-while(true)
-{
-    //get user prompt and add to chat history
-    Console.WriteLine("Enter your prompt : ");
-    var userPrompt = Console.ReadLine();
-    chatHistory.Add(new ChatMessage(ChatRole.User, userPrompt));
-
-    //Stream the AI response and add to chat history
-    Console.WriteLine("Response of the AI");
-    var response = "";
-    await foreach(ChatResponseUpdate item in chatClient.GetStreamingResponseAsync(chatHistory))
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(
+    new HostApplicationBuilderSettings
     {
-        Console.Write(item.Text);
-        response += item.Text;
+        Args = args,
+        ContentRootPath = AppContext.BaseDirectory,
+    });
+
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplicationInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<ConsoleChatRunner>();
+
+using IHost host = builder.Build();
+
+try
+{
+    await host.StartAsync();
+
+    ConsoleChatRunner runner = host.Services
+        .GetRequiredService<ConsoleChatRunner>();
+
+    IHostApplicationLifetime lifetime = host.Services
+        .GetRequiredService<IHostApplicationLifetime>();
+
+    await runner.RunAsync(lifetime.ApplicationStopping);
+}
+catch (OptionsValidationException exception)
+{
+    Console.Error.WriteLine("La configuration IA est invalide :");
+
+    foreach (string failure in exception.Failures)
+    {
+        Console.Error.WriteLine($"- {failure}");
     }
 
-    chatHistory.Add (new ChatMessage(ChatRole.Assistant, response));
-    Console.WriteLine();
-
-
+    Environment.ExitCode = 1;
+}
+catch (OperationCanceledException)
+{
+    // Arrêt normal, par exemple après Ctrl+C.
+}
+finally
+{
+    await host.StopAsync();
 }
 
