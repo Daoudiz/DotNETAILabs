@@ -1,59 +1,103 @@
 ﻿using DotNetIALabs.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.AI;
-using DotNetIALabs.Application;
+using DotNetIALabs.Presentation.Labs;
 
 namespace DotNetIALabs.Presentation
 {
-    public sealed class ConsoleChatRunner(IChatClient chatClient, IOptions<AiOptions> options, IQSLAbsIA qsLabsIA)
-    {
-        private readonly ChatOptions _chatOptions = new ChatOptions
-        {
-            MaxOutputTokens = options.Value.Generation.MaxOutputTokens,
-            Temperature = options.Value.Generation.Temperature,
-        };
+    public sealed class ConsoleChatRunner(
+        ChatLabs chatLabs,
+        VectorSearchLab vectorSearchLab)
+    {      
 
-        public async Task RunAsync(CancellationToken cancellationToken = default)
+        public async Task RunAsync(CancellationToken cancellationToken )
         {
-            Console.WriteLine("Assistant IA prêt.");
-            Console.WriteLine("Saisissez 'exit' ou 'quit' pour terminer.");
+            Console.WriteLine("Assistant IA prêt.");                  
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                WriteMenu();
 
+                string? choice = await Console.In.ReadLineAsync(cancellationToken);
 
-                Console.WriteLine("Veuillez choisir le lab : ");
-
-                Console.WriteLine("******************************************************************");
-                Console.WriteLine("** 1.Se connecter à un modèle d'IA et le solliciter          *****");
-                Console.WriteLine("** 2.Générer une application de conversation                 *****");
-                Console.WriteLine("** 3.Demander une sortie structurée                          *****");
-                Console.WriteLine("** 4.Créer une application de recherche vectorielle IA .NET  *****");
-                Console.WriteLine("** 5.Exécuter une fonction .NET locale                       *****");
-                Console.WriteLine("** 6.Créer un assistant IA minimal                           *****");
-                Console.WriteLine("** 7.Commencez à utiliser les modèles d'application IA       *****");
-                Console.WriteLine("******************************************************************");
-
-                var choice = Console.ReadLine();
-
-                switch (choice)
+                if (choice is null)
                 {
-                    case "1":
-                        await qsLabsIA.Lab1SimpleIACall(chatClient);
-                        break;
-                    case "2":
-                        await qsLabsIA.Lab2SimpleIAChat(
-                            chatClient,
-                            cancellationToken);
-                        break;
-                    case "3":
-                        await qsLabsIA.Lab3StructedOutput(chatClient);
-                        break;
+                    return;
                 }
 
+                choice = choice.Trim();
 
+
+                if (choice.Equals("exit", StringComparison.OrdinalIgnoreCase)
+                || choice.Equals("quit", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Fin de l'application.");
+                    return;
+                }
+
+                try
+                {
+                    await RunSelectedLabAsync(choice, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                    when (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (Exception exception)
+                {
+                    Console.Error.WriteLine();
+                    Console.Error.WriteLine(
+                        $"Le lab n'a pas pu être exécuté : {exception.Message}");
+                    Console.Error.WriteLine();
+                }
             }
 
+        }
+
+        private async Task RunSelectedLabAsync(
+        string choice,
+        CancellationToken cancellationToken)
+        {
+            switch (choice)
+            {
+                case "1":
+                    await chatLabs.RunSimpleCallAsync(cancellationToken);
+                    break;
+                case "2":
+                    await chatLabs.RunConversationAsync(cancellationToken);
+                    break;
+                case "3":
+                    await chatLabs.RunStructuredOutputAsync(cancellationToken);
+                    break;
+                case "4":
+                    await vectorSearchLab.RunAsync(cancellationToken);
+                    break;
+                case "5":
+                    await chatLabs.RunSimpleFunctionCallAsync(cancellationToken);
+                    break;
+                case "6":
+                    await chatLabs.RunMultipleFunctionCallAsync(cancellationToken);
+                    break;
+                default:
+                    Console.WriteLine(
+                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 6.");
+                    break;
+            }
+        }
+
+        private static void WriteMenu()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Veuillez choisir le lab :");
+            Console.WriteLine("1. Se connecter à un modèle d'IA et le solliciter");
+            Console.WriteLine("2. Générer une application de conversation");
+            Console.WriteLine("3. Demander une sortie structurée");
+            Console.WriteLine("4. Créer une application de recherche vectorielle");
+            Console.WriteLine("5. Appeler une fonction .NET locale à l'aide d'un modèle");
+            Console.WriteLine("6. Appeler une fonction .NET locale à l'aide d'un modèle avec multi-fonctions");
+            Console.WriteLine("exit ou quit. Quitter");
+            Console.Write("Choix : ");
         }
     }
 }

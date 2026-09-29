@@ -1,6 +1,5 @@
 ﻿using DotNetIALabs.Infrastructure;
 using DotNetIALabs.Presentation;
-using DotNetIALabs.Application;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -9,12 +8,10 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder(
     new HostApplicationBuilderSettings
     {
         Args = args,
-        ContentRootPath = AppContext.BaseDirectory,
+        ContentRootPath = AppContext.BaseDirectory
     });
 
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddApplicationInfrastructure(builder.Configuration);
-builder.Services.AddSingleton<ConsoleChatRunner>();
 
 using IHost host = builder.Build();
 
@@ -43,10 +40,9 @@ catch (OptionsValidationException exception)
 }
 catch (OperationCanceledException)
 {
-    // Arrêt normal, par exemple après Ctrl+C.
+    // Arrêt normal demandé par l'hôte, par exemple avec Ctrl+C.
 }
 finally
 {
     await host.StopAsync();
 }
-

@@ -53,6 +53,10 @@ namespace DotNetIALabs.Configuration
             ICollection<string> errors)
         {
             Require(options.Model, "AI:Providers:Ollama:Model", errors);
+            Require(options.EmbeddingModel,"AI:Providers:Ollama:EmbeddingModel",errors);
+            RequirePositive(options.EmbeddingDimensions,
+                            "AI:Providers:Ollama:EmbeddingDimensions",
+                            errors);
             RequireHttpEndpoint(
                 options.Endpoint,
                 "AI:Providers:Ollama:Endpoint",
@@ -64,6 +68,14 @@ namespace DotNetIALabs.Configuration
             ICollection<string> errors)
         {
             Require(options.Model, "AI:Providers:OpenAI:Model", errors);
+            Require(
+            options.EmbeddingModel,
+            "AI:Providers:OpenAI:EmbeddingModel",
+            errors);
+            RequirePositive(
+            options.EmbeddingDimensions,
+            "AI:Providers:OpenAI:EmbeddingDimensions",
+            errors);
             Require(
                 options.ApiKey,
                 "AI:Providers:OpenAI:ApiKey",
@@ -78,6 +90,14 @@ namespace DotNetIALabs.Configuration
             Require(
                 options.Deployment,
                 "AI:Providers:AzureOpenAI:Deployment",
+                errors);
+            Require(
+                    options.EmbeddingDeployment,
+                    "AI:Providers:AzureOpenAI:EmbeddingDeployment",
+                    errors);
+            RequirePositive(
+                options.EmbeddingDimensions,
+                "AI:Providers:AzureOpenAI:EmbeddingDimensions",
                 errors);
             RequireHttpEndpoint(
                 options.Endpoint,
@@ -122,6 +142,16 @@ namespace DotNetIALabs.Configuration
             errors.Add(string.IsNullOrWhiteSpace(guidance)
                 ? error
                 : $"{error} {guidance}");
+        }
+
+        private static void RequirePositive( int value,
+                                             string path,
+                                             ICollection<string> errors)
+        {
+            if (value <= 0)
+            {
+                errors.Add($"{path} doit être supérieur à zéro.");
+            }
         }
 
         private static void RequireHttpEndpoint(

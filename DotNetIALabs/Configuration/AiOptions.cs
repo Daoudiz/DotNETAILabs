@@ -20,8 +20,8 @@ public sealed class AiOptions
 
 public sealed class GenerationOptions
 {
-    public float? Temperature { get; init; } = 0.7f;
-    public int? MaxOutputTokens { get; init; } = 1024;
+    public float Temperature { get; init; } = 0.7f;
+    public int MaxOutputTokens { get; init; } = 1024;
 }
 
 public sealed class AiProvidersOptions
@@ -34,12 +34,19 @@ public sealed class AiProvidersOptions
 public sealed class OllamaOptions
 {
     public string Model { get; init; } = string.Empty;
+    
+    // Modèle utilisé par IEmbeddingGenerator.
+    public string EmbeddingModel { get; init; } = string.Empty;
+    public int EmbeddingDimensions { get; init; }
     public string Endpoint { get; init; } = string.Empty;
 }
 
 public sealed class OpenAiOptions
 {
     public string Model { get; init; } = string.Empty;
+    public string EmbeddingModel { get; init; } = string.Empty;
+    public int EmbeddingDimensions { get; init; }
+
 
     // Alimentée par User Secrets ou une variable d'environnement.
     public string ApiKey { get; init; } = string.Empty;
@@ -49,6 +56,8 @@ public sealed class AzureOpenAiOptions
 {
     // Nom du déploiement Azure, pas nécessairement celui du modèle.
     public string Deployment { get; init; } = string.Empty;
+    public string EmbeddingDeployment { get; init; } = string.Empty;
+    public int EmbeddingDimensions { get; init; }
     public string Endpoint { get; init; } = string.Empty;
 
     // Alimentée par User Secrets ou une variable d'environnement.
