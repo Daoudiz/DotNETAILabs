@@ -1,5 +1,6 @@
 ﻿using Azure.AI.OpenAI;
 using DotNetIALabs.Configuration;
+using DotNetIALabs.Data;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -24,6 +25,13 @@ namespace DotNetIALabs.Presentation.Labs
             AssistantClient assistantClient = openAIClient.GetAssistantClient();
             OpenAIFileClient fileClient = openAIClient.GetOpenAIFileClient();
 
+            OpenAIFile salesFile = await SalesHistory.UploadAsync(
+                fileClient,
+                cancellationToken);
+
+            Console.WriteLine(
+                $"Fichier de ventes chargé dans OpenAI : {salesFile.Filename} " +
+                $"({salesFile.Id}).");
         }
     }
 }
