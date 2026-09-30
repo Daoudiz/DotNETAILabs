@@ -14,7 +14,7 @@ namespace DotNetIALabs.Presentation.Labs
         IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
         IOptions<AiOptions> aiOptions)
     {
-        public async Task RunAsync(CancellationToken cancellationToken)
+        public async Task RunSearchAzureServicesAsync(CancellationToken cancellationToken)
         {
             int dimensions = GetActiveEmbeddingDimensions(aiOptions.Value);
             VectorStoreCollectionDefinition definition = CreateDefinition(dimensions);
@@ -69,6 +69,80 @@ namespace DotNetIALabs.Presentation.Labs
                 Console.WriteLine($"  {result.Record.Description}");
             }
 
+        }
+
+        public async Task RunSearchEquipmentRulesAsync(CancellationToken cancellationToken)
+        {
+            int dimensions = GetActiveEmbeddingDimensions(aiOptions.Value);
+            VectorStoreCollectionDefinition definition = CreateEquipmentRulesDefinition(dimensions);
+
+            InMemoryVectorStore vectoreStore = new();
+
+            VectorStoreCollection<int, EquipmentRulesRecord> rules =
+               vectoreStore.GetCollection<int, EquipmentRulesRecord>(
+                   "EquipmentRules",
+                   definition
+                   );
+
+            await rules.EnsureCollectionExistsAsync(cancellationToken);
+
+            foreach (EquipmentRuleSeed seed in EquipmentRulesRegister.All)
+            {
+                ReadOnlyMemory<float> vector = await GenerateVectorAsync(
+                   seed.Rule,
+                   dimensions,
+                   cancellationToken);
+
+                EquipmentRulesRecord record = new()
+                {
+                    Key = seed.Key,
+                    Name = seed.Name,
+                    Rule = seed.Rule,
+                    Embedding = vector,
+                };
+
+                await rules.UpsertAsync(record, cancellationToken);
+            }
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+
+                Console.WriteLine("Veuillez entrer votre prompt :");
+
+                string? prompt = await Console.In.ReadLineAsync(cancellationToken);
+
+                if ((prompt is null))
+                {
+                    return;
+                }
+
+                if (prompt is null
+                    || prompt.Trim().Equals(
+                        "bye",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
+                ReadOnlyMemory<float> promptEmbedding = await GenerateVectorAsync(
+                    prompt,
+                    dimensions,
+                    cancellationToken);
+
+                Console.WriteLine($"Prompt : {prompt}");
+                Console.WriteLine("Résultats de la recherche vectorielle :");
+
+                await foreach (VectorSearchResult<EquipmentRulesRecord> result in
+                    rules.SearchAsync(
+                        promptEmbedding,
+                        top: 1,
+                        cancellationToken: cancellationToken))
+                {
+                    Console.WriteLine($"- {result.Record.Name}");
+                    Console.WriteLine($"  Score : {result.Score:F4}");
+                    Console.WriteLine($"  {result.Record.Rule}");
+                }
+            }
 
         }
 
@@ -101,28 +175,52 @@ namespace DotNetIALabs.Presentation.Labs
         }
 
         private static VectorStoreCollectionDefinition CreateDefinition(
-       int dimensions) => new()
+                int dimensions) => new()
        {
-           Properties =
-       [
-           new VectorStoreKeyProperty(
-                nameof(CloudServiceRecord.Key),
-                typeof(int)),
-            new VectorStoreDataProperty(
-                nameof(CloudServiceRecord.Name),
-                typeof(string)),
-            new VectorStoreDataProperty(
-                nameof(CloudServiceRecord.Description),
-                typeof(string)),
-            new VectorStoreVectorProperty(
-                nameof(CloudServiceRecord.Embedding),
-                typeof(ReadOnlyMemory<float>),
-                dimensions)
-            {
-                DistanceFunction = DistanceFunction.CosineSimilarity
-            }
-       ]
+            Properties =
+            [
+                new VectorStoreKeyProperty(
+                    nameof(CloudServiceRecord.Key),
+                    typeof(int)),
+                new VectorStoreDataProperty(
+                    nameof(CloudServiceRecord.Name),
+                    typeof(string)),
+                new VectorStoreDataProperty(
+                    nameof(CloudServiceRecord.Description),
+                    typeof(string)),
+                new VectorStoreVectorProperty(
+                    nameof(CloudServiceRecord.Embedding),
+                    typeof(ReadOnlyMemory<float>),
+                    dimensions)
+                {
+                    DistanceFunction = DistanceFunction.CosineSimilarity
+                }
+            ]
        };
+
+        private static VectorStoreCollectionDefinition CreateEquipmentRulesDefinition(
+            int dimensions) => new()
+            {
+                Properties =
+            [
+                new VectorStoreKeyProperty(
+                    nameof(EquipmentRulesRecord.Key),
+                    typeof(int)),
+                new VectorStoreDataProperty(
+                    nameof(EquipmentRulesRecord.Name),
+                    typeof(string)),
+                new VectorStoreDataProperty(
+                    nameof(EquipmentRulesRecord.Rule),
+                    typeof(string)),
+                new VectorStoreVectorProperty(
+                    nameof(EquipmentRulesRecord.Embedding),
+                    typeof(ReadOnlyMemory<float>),
+                    dimensions)
+                {
+                    DistanceFunction = DistanceFunction.CosineSimilarity
+                }
+            ]
+            };
 
         private static int GetActiveEmbeddingDimensions(AiOptions options)
         {

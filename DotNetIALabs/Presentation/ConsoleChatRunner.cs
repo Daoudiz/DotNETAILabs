@@ -71,12 +71,15 @@ namespace DotNetIALabs.Presentation
                     await chatLabs.RunStructuredOutputAsync(cancellationToken);
                     break;
                 case "4":
-                    await vectorSearchLab.RunAsync(cancellationToken);
+                    await vectorSearchLab.RunSearchAzureServicesAsync(cancellationToken);
                     break;
                 case "5":
-                    await chatLabs.RunSimpleFunctionCallAsync(cancellationToken);
+                    await vectorSearchLab.RunSearchEquipmentRulesAsync(cancellationToken);
                     break;
                 case "6":
+                    await chatLabs.RunSimpleFunctionCallAsync(cancellationToken);
+                    break;
+                case "7":
                     await chatLabs.RunMultipleFunctionCallAsync(cancellationToken);
                     break;
                 default:
@@ -93,9 +96,10 @@ namespace DotNetIALabs.Presentation
             Console.WriteLine("1. Se connecter à un modèle d'IA et le solliciter");
             Console.WriteLine("2. Générer une application de conversation");
             Console.WriteLine("3. Demander une sortie structurée");
-            Console.WriteLine("4. Créer une application de recherche vectorielle");
-            Console.WriteLine("5. Appeler une fonction .NET locale à l'aide d'un modèle");
-            Console.WriteLine("6. Appeler une fonction .NET locale à l'aide d'un modèle avec multi-fonctions");
+            Console.WriteLine("4. Recherche vectorielle services Azure");
+            Console.WriteLine("5. Recherche vectorielle règles équipements");
+            Console.WriteLine("6. Appeler une fonction .NET à l'aide d'un modèle");
+            Console.WriteLine("7. Appeler une fonction .NET à l'aide d'un modèle avec multi-fonctions");
             Console.WriteLine("exit ou quit. Quitter");
             Console.Write("Choix : ");
         }
