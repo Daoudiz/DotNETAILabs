@@ -5,6 +5,8 @@
 
 #Local documentation
 /docs/
+#Functionnal tests
+/Tests/
 
 # User-specific files
 *.rsuser

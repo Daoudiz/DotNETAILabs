@@ -1,18 +1,41 @@
 ﻿using DotNetIALabs.Configuration;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.AI;
 using DotNetIALabs.Presentation.Labs;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
+using Microsoft.VisualBasic.FileIO;
 
 namespace DotNetIALabs.Presentation
 {
     public sealed class ConsoleChatRunner(
+        IOptions<AiOptions> aiOptions,
         ChatLabs chatLabs,
         VectorSearchLab vectorSearchLab)
     {      
 
         public async Task RunAsync(CancellationToken cancellationToken )
         {
-            Console.WriteLine("Assistant IA prêt.");                  
+            string aiModel = string.Empty;
+            string embeddingModel = string.Empty;
+
+            switch(aiOptions.Value.Provider)
+            {
+                case ("Ollama"):
+                    aiModel = aiOptions.Value.Providers.Ollama.Model;
+                    embeddingModel = aiOptions.Value.Providers.Ollama.EmbeddingModel;
+                    break;
+                case ("OpenAI"):
+                    aiModel = aiOptions.Value.Providers.OpenAI.Model;
+                    embeddingModel = aiOptions.Value.Providers.OpenAI.EmbeddingModel;
+                        break;
+                case ("AzureOpenAI"):
+                    aiModel = aiOptions.Value.Providers.AzureOpenAI.Deployment;
+                    embeddingModel = aiOptions.Value.Providers.AzureOpenAI.EmbeddingDeployment;
+                    break;
+            }           
+            
+
+
+            Console.WriteLine($"Assistant IA {aiModel}  prêt. avec le modèl d'embedding {embeddingModel} ");                              
 
             while (!cancellationToken.IsCancellationRequested)
             {
