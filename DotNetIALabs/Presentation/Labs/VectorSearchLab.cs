@@ -14,8 +14,8 @@ namespace DotNetIALabs.Presentation.Labs
     {
         private const string EquipmentRulesCollectionName = "EquipmentRules";
         private const int EquipmentRulesCandidateCount = 3;
-        private const double EquipmentRulesMinimumScore = 0.47;
-        private const double EquipmentRulesAmbiguityDelta = 0.03;
+        private const double EquipmentRulesMinimumScore = 0.44;
+        private const double EquipmentRulesAmbiguityDelta = 0.0085;
 
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
         private readonly AiOptions _aiOptions;
