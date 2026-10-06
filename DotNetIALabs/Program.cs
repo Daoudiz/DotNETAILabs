@@ -1,13 +1,27 @@
-﻿using DotNetIALabs.Infrastructure;
+﻿using DotNetIALabs.Evaluation;
+using DotNetIALabs.Infrastructure;
 using DotNetIALabs.Presentation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+const string evaluationArgument = "--evaluate-equipment-rules";
+
+bool runEquipmentRulesEvaluation = args.Contains(
+    evaluationArgument,
+    StringComparer.OrdinalIgnoreCase);
+
+string[] hostArgs = args
+    .Where(argument => !argument.Equals(
+        evaluationArgument,
+        StringComparison.OrdinalIgnoreCase))
+    .ToArray();
+
+
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(
     new HostApplicationBuilderSettings
     {
-        Args = args,
+        Args = hostArgs,
         ContentRootPath = AppContext.BaseDirectory
     });
 
@@ -19,13 +33,29 @@ try
 {
     await host.StartAsync();
 
-    ConsoleChatRunner runner = host.Services
-        .GetRequiredService<ConsoleChatRunner>();
+    if (runEquipmentRulesEvaluation)
+    {
+        EquipmentRulesEvaluationRunner evaluationRunner = host.Services
+            .GetRequiredService<EquipmentRulesEvaluationRunner>();
 
-    IHostApplicationLifetime lifetime = host.Services
-        .GetRequiredService<IHostApplicationLifetime>();
+        EquipmentRulesEvaluationReport report =
+            await evaluationRunner.RunAsync(
+                host.Services
+                    .GetRequiredService<IHostApplicationLifetime>()
+                    .ApplicationStopping);
 
-    await runner.RunAsync(lifetime.ApplicationStopping);
+        Environment.ExitCode = report.Passed ? 0 : 1;
+    }
+    else
+    {
+        ConsoleChatRunner runner = host.Services
+            .GetRequiredService<ConsoleChatRunner>();
+
+        IHostApplicationLifetime lifetime = host.Services
+            .GetRequiredService<IHostApplicationLifetime>();
+
+        await runner.RunAsync(lifetime.ApplicationStopping);
+    }
 }
 catch (OptionsValidationException exception)
 {

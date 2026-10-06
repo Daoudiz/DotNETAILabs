@@ -14,7 +14,7 @@ namespace DotNetIALabs.Presentation.Labs
     {
         private const string EquipmentRulesCollectionName = "EquipmentRules";
         private const int EquipmentRulesCandidateCount = 3;
-        private const double EquipmentRulesMinimumScore = 0.44;
+        private const double EquipmentRulesMinimumScore = 0.43;
         private const double EquipmentRulesAmbiguityDelta = 0.0085;
 
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
@@ -24,9 +24,7 @@ namespace DotNetIALabs.Presentation.Labs
         private readonly VectorStoreCollection<int, EquipmentRulesRecord> _equipmentRules;
         private bool _equipmentRulesInitialized;
 
-        private sealed record EquipmentRuleMatch(
-            EquipmentRulesRecord Record,
-            double? Score);
+        
 
       
         public VectorSearchLab(
@@ -102,7 +100,7 @@ namespace DotNetIALabs.Presentation.Labs
 
         public async Task RunSearchEquipmentRulesAsync(CancellationToken cancellationToken)
         {
-            List<(string Prompt, List<EquipmentRuleMatch> Matches)> searchHistory = [];
+            //List<(string Prompt, List<EquipmentRuleMatch> Matches)> searchHistory = [];
 
             await EnsureEquipmentRulesIndexedAsync(cancellationToken);
 
@@ -124,27 +122,27 @@ namespace DotNetIALabs.Presentation.Labs
 
                 if (prompt.Equals("bye", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("Historique des recherches :");
+                    //Console.WriteLine("Historique des recherches :");
 
-                    for (int i = 0; i < searchHistory.Count; i++)
-                    {
-                        (string searchedPrompt, List<EquipmentRuleMatch> searchedMatches) =
-                            searchHistory[i];
+                    //for (int i = 0; i < searchHistory.Count; i++)
+                    //{
+                    //    (string searchedPrompt, List<EquipmentRuleMatch> searchedMatches) =
+                    //        searchHistory[i];
 
-                        Console.WriteLine($"{i + 1}. Question : {searchedPrompt}");
+                    //    Console.WriteLine($"{i + 1}. Question : {searchedPrompt}");
 
-                        if (searchedMatches.Count == 0)
-                        {
-                            Console.WriteLine("   Aucun résultat suffisamment pertinent.");
-                            continue;
-                        }
+                    //    if (searchedMatches.Count == 0)
+                    //    {
+                    //        Console.WriteLine("   Aucun résultat suffisamment pertinent.");
+                    //        continue;
+                    //    }
 
-                        foreach (EquipmentRuleMatch match in searchedMatches)
-                        {
-                            Console.WriteLine(
-                                $"   - {match.Record.Name} | Score : {match.Score:F4}");
-                        }
-                    }
+                    //    foreach (EquipmentRuleMatch match in searchedMatches)
+                    //    {
+                    //        Console.WriteLine(
+                    //            $"   - {match.Record.Name} | Score : {match.Score:F4}");
+                    //    }
+                    //}
 
                     break;
                 }
@@ -154,68 +152,102 @@ namespace DotNetIALabs.Presentation.Labs
                     continue;
                 }
 
-                ReadOnlyMemory<float> promptEmbedding = await GenerateVectorAsync(
-                    prompt,
-                    _embeddingDimensions,
-                    cancellationToken);
+                EquipmentRulesSearchDecision decision =  await SearchEquipmentRulesAsync(
+                                                                    prompt,
+                                                                    cancellationToken);
 
-                List<EquipmentRuleMatch> matches = [];
-
-                await foreach (VectorSearchResult<EquipmentRulesRecord> result in
-                    _equipmentRules.SearchAsync(
-                        promptEmbedding,
-                        top: EquipmentRulesCandidateCount,
-                        cancellationToken: cancellationToken))
+                switch (decision.Outcome)
                 {
-                    
-
-
-
-                    if (result.Score >= EquipmentRulesMinimumScore)
-                    {
-                        matches.Add(new EquipmentRuleMatch(
-                            result.Record,
-                            result.Score));
-                    }                  
-                }
-
-                searchHistory.Add((prompt, matches));
-
-                if (matches.Count == 0)
-                {
-                    Console.WriteLine(
-                        "Le registre ne contient pas de règle suffisamment pertinente " +
-                        "pour cette question. Précisez votre demande.");
-                    continue;
-                }          
-
-                bool isAmbiguous = matches.Count >= 2
-                        && matches[0].Score - matches[1].Score
-                            <= EquipmentRulesAmbiguityDelta;
-
-                if (isAmbiguous)
-                {
-                    Console.WriteLine(
-                        "Plusieurs règles peuvent correspondre. " +
-                        "Précisez le sujet concerné :");
-
-                    foreach (EquipmentRuleMatch match in matches)
-                    {
+                    case EquipmentRulesSearchOutcome.NoMatch:
                         Console.WriteLine(
-                            $"- {match.Record.Name} (score : {match.Score:F4})");
-                    }
+                            "Le registre ne contient pas de règle suffisamment pertinente " +
+                            "pour cette question.");
+                        break;
 
-                    continue;
+                    case EquipmentRulesSearchOutcome.Ambiguous:
+                        Console.WriteLine(
+                            "Plusieurs règles peuvent correspondre. " +
+                            "Précisez votre demande :");
+
+                        foreach (EquipmentRuleMatch candidate in
+                            decision.Candidates.Take(2))
+                        {
+                            Console.WriteLine(
+                                $"- {candidate.Record.Name} ({candidate.Score:F4})");
+                        }
+                        break;
+
+                    case EquipmentRulesSearchOutcome.Match:
+                        EquipmentRuleMatch bestMatch = decision.Candidates[0];
+
+                        Console.WriteLine($"- {bestMatch.Record.Name}");
+                        Console.WriteLine($"  Score : {bestMatch.Score:F4}");
+                        Console.WriteLine($"  {bestMatch.Record.Rule}");
+                        break;
                 }
 
-                Console.WriteLine("Règles pertinentes :");
+                //ReadOnlyMemory<float> promptEmbedding = await GenerateVectorAsync(
+                //    prompt,
+                //    _embeddingDimensions,
+                //    cancellationToken);
 
-                foreach (EquipmentRuleMatch match in matches)
-                {
-                    Console.WriteLine($"- {match.Record.Name}");
-                    Console.WriteLine($"  Score : {match.Score:F4}");
-                    Console.WriteLine($"  {match.Record.Rule}");
-                }
+                //List<EquipmentRuleMatch> matches = [];
+
+                //await foreach (VectorSearchResult<EquipmentRulesRecord> result in
+                //    _equipmentRules.SearchAsync(
+                //        promptEmbedding,
+                //        top: EquipmentRulesCandidateCount,
+                //        cancellationToken: cancellationToken))
+                //{
+
+
+
+
+                //    if (result.Score >= EquipmentRulesMinimumScore)
+                //    {
+                //        matches.Add(new EquipmentRuleMatch(
+                //            result.Record,
+                //            result.Score));
+                //    }                  
+                //}
+
+                //searchHistory.Add((prompt, matches));
+
+                //if (matches.Count == 0)
+                //{
+                //    Console.WriteLine(
+                //        "Le registre ne contient pas de règle suffisamment pertinente " +
+                //        "pour cette question. Précisez votre demande.");
+                //    continue;
+                //}          
+
+                //bool isAmbiguous = matches.Count >= 2
+                //        && matches[0].Score - matches[1].Score
+                //            <= EquipmentRulesAmbiguityDelta;
+
+                //if (isAmbiguous)
+                //{
+                //    Console.WriteLine(
+                //        "Plusieurs règles peuvent correspondre. " +
+                //        "Précisez le sujet concerné :");
+
+                //    foreach (EquipmentRuleMatch match in matches)
+                //    {
+                //        Console.WriteLine(
+                //            $"- {match.Record.Name} (score : {match.Score:F4})");
+                //    }
+
+                //    continue;
+                //}
+
+                //Console.WriteLine("Règles pertinentes :");
+
+                //foreach (EquipmentRuleMatch match in matches)
+                //{
+                //    Console.WriteLine($"- {match.Record.Name}");
+                //    Console.WriteLine($"  Score : {match.Score:F4}");
+                //    Console.WriteLine($"  {match.Record.Rule}");
+                //}
             }
 
         }
@@ -330,7 +362,7 @@ namespace DotNetIALabs.Presentation.Labs
     $"Titre : {seed.Name}\nRègle : {seed.Rule}";
 
         private async Task EnsureEquipmentRulesIndexedAsync(
-    CancellationToken cancellationToken)
+                                CancellationToken cancellationToken)
         {
             if (_equipmentRulesInitialized)
             {
@@ -358,6 +390,61 @@ namespace DotNetIALabs.Presentation.Labs
             }
 
             _equipmentRulesInitialized = true;
+        }
+
+        public async Task<EquipmentRulesSearchDecision>  SearchEquipmentRulesAsync(
+                                                            string question,
+                                                            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(question))
+            {
+                throw new ArgumentException(
+                    "La question ne peut pas être null.",
+                    nameof(question));
+            }
+
+            //Generate embedding for equipment rules
+            await EnsureEquipmentRulesIndexedAsync(cancellationToken);
+
+            //Generate embedding for user prompt
+            ReadOnlyMemory<float> questionEmbedding = await GenerateVectorAsync(
+                        question.Trim(),
+                        _embeddingDimensions,
+                        cancellationToken);
+
+            List<EquipmentRuleMatch> candidates = [];
+
+            await foreach (VectorSearchResult<EquipmentRulesRecord> result in
+                _equipmentRules.SearchAsync(
+                    questionEmbedding,
+                    top: EquipmentRulesCandidateCount,
+                    cancellationToken: cancellationToken))
+            {
+                if(result.Score is not double score)
+                {
+                    continue;
+                }
+
+                candidates.Add(new EquipmentRuleMatch(
+                    result.Record,
+                    score));
+            }
+
+            if (candidates.Count == 0 || candidates[0].Score < EquipmentRulesMinimumScore)
+            {
+                return new EquipmentRulesSearchDecision(
+                    EquipmentRulesSearchOutcome.NoMatch,
+                    candidates);
+            }
+
+            bool isAmbiguous = candidates.Count >= 2 && (candidates[0].Score - candidates[1].Score) <= EquipmentRulesAmbiguityDelta;            
+           
+            return new EquipmentRulesSearchDecision(
+                isAmbiguous
+                    ? EquipmentRulesSearchOutcome.Ambiguous
+                    : EquipmentRulesSearchOutcome.Match,
+                candidates);
+
         }
 
     }

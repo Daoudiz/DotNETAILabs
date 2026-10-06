@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Azure;
+using Azure.AI.OpenAI;
+using DotNetIALabs.Configuration;
+using DotNetIALabs.Evaluation;
+using DotNetIALabs.Presentation;
+using DotNetIALabs.Presentation.Labs;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OllamaSharp;
 using OpenAI;
-using Azure;
-using Azure.AI.OpenAI;
-
-using DotNetIALabs.Configuration;
-using DotNetIALabs.Presentation.Labs;
-using DotNetIALabs.Presentation;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace DotNetIALabs.Infrastructure;
 
@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<ChatLabs>();
         services.AddSingleton<VectorSearchLab>();
         services.AddSingleton<ConsoleChatRunner>();
+        services.AddSingleton<EquipmentRulesEvaluationRunner>();
 
         return services;
     }
