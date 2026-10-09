@@ -10,7 +10,8 @@ namespace DotNetIALabs.Presentation
         IOptions<AiOptions> aiOptions,
         ChatLabs chatLabs,
         VectorSearchLab vectorSearchLab,
-        FunctionsCallLabs functionCallLab)
+        FunctionsCallLabs functionCallLab,
+        PromptPrincipalesLabs promptPrincipalesLabs)
     {      
 
         public async Task RunAsync(CancellationToken cancellationToken )
@@ -112,9 +113,21 @@ namespace DotNetIALabs.Presentation
                 case "9":
                     await functionCallLab.RunFunctionInvokingChatClient(cancellationToken);
                     break;
+                case "10":
+                    await promptPrincipalesLabs.RunTactic1UsingDelimeters(cancellationToken);
+                    break;
+                case "11":
+                    await promptPrincipalesLabs.RunTactic2AskStructredOutput(cancellationToken);
+                    break;
+                case "12":
+                    await promptPrincipalesLabs.RunTactic3AskCheckConditions(cancellationToken);
+                    break;
+                case "13":
+                    await promptPrincipalesLabs.RunTactic4Fewshot(cancellationToken);
+                    break;
                 default:
                     Console.WriteLine(
-                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 6.");
+                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 13.");
                     break;
             }
         }
@@ -137,6 +150,13 @@ namespace DotNetIALabs.Presentation
             Console.WriteLine("7. Appeler une fonction .NET à l'aide d'un modèle avec multi-fonctions");
             Console.WriteLine("8. Appeler manuellement une fonction créer avec AIFunctionFactory");
             Console.WriteLine("9. Appeler une fonction créer avec AIFunctionFactory via Assitant AI");
+
+            Console.WriteLine("***************** Principes prompts efficaces ********************************");
+            Console.WriteLine("10. Tactic 1: Use delimiters to clearly indicate distinct parts of the input");
+            Console.WriteLine("11. Tactic 2: Ask the model to generate structured output");
+            Console.WriteLine("12. Tactic 3: Ask the model to check whether conditions are satisfied");
+            Console.WriteLine("13. Tactic 4: 'Few-shot' prompting");
+
 
             Console.WriteLine("exit ou quit. Quitter");
             Console.Write("Choix : ");

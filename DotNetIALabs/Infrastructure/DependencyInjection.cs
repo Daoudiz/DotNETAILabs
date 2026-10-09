@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<ChatLabs>();
         services.AddSingleton<VectorSearchLab>();
         services.AddSingleton<FunctionsCallLabs>();
+        services.AddSingleton<PromptPrincipalesLabs>();
         services.AddSingleton<ConsoleChatRunner>();
         services.AddSingleton<EquipmentRulesEvaluationRunner>();
 
