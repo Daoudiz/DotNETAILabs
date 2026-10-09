@@ -9,7 +9,8 @@ namespace DotNetIALabs.Presentation
     public sealed class ConsoleChatRunner(
         IOptions<AiOptions> aiOptions,
         ChatLabs chatLabs,
-        VectorSearchLab vectorSearchLab)
+        VectorSearchLab vectorSearchLab,
+        FunctionsCallLabs functionCallLab)
     {      
 
         public async Task RunAsync(CancellationToken cancellationToken )
@@ -100,10 +101,16 @@ namespace DotNetIALabs.Presentation
                     await vectorSearchLab.RunSearchEquipmentRulesAsync(cancellationToken);
                     break;
                 case "6":
-                    await chatLabs.RunSimpleFunctionCallAsync(cancellationToken);
+                    await functionCallLab.RunSimpleFunctionCallAsync(cancellationToken);
                     break;
                 case "7":
-                    await chatLabs.RunMultipleFunctionCallAsync(cancellationToken);
+                    await functionCallLab.RunMultipleFunctionCallAsync(cancellationToken);
+                    break;
+                case "8":
+                    await functionCallLab.RunSimpleDirectFunctionCall();
+                    break;
+                case "9":
+                    await functionCallLab.RunFunctionInvokingChatClient(cancellationToken);
                     break;
                 default:
                     Console.WriteLine(
@@ -116,13 +123,21 @@ namespace DotNetIALabs.Presentation
         {
             Console.WriteLine();
             Console.WriteLine("Veuillez choisir le lab :");
+            Console.WriteLine("***************************** Simple chat *********************************");
             Console.WriteLine("1. Se connecter à un modèle d'IA et le solliciter");
             Console.WriteLine("2. Générer une application de conversation");
             Console.WriteLine("3. Demander une sortie structurée");
+
+            Console.WriteLine("************************ Recherche vectorielle******************************");
             Console.WriteLine("4. Recherche vectorielle services Azure");
             Console.WriteLine("5. Recherche vectorielle règles équipements");
+
+            Console.WriteLine("************************ Appel des fonctions ********************************");
             Console.WriteLine("6. Appeler une fonction .NET à l'aide d'un modèle");
             Console.WriteLine("7. Appeler une fonction .NET à l'aide d'un modèle avec multi-fonctions");
+            Console.WriteLine("8. Appeler manuellement une fonction créer avec AIFunctionFactory");
+            Console.WriteLine("9. Appeler une fonction créer avec AIFunctionFactory via Assitant AI");
+
             Console.WriteLine("exit ou quit. Quitter");
             Console.Write("Choix : ");
         }

@@ -39,11 +39,12 @@ public static class DependencyInjection
 
         services.AddSingleton<ChatLabs>();
         services.AddSingleton<VectorSearchLab>();
+        services.AddSingleton<FunctionsCallLabs>();
         services.AddSingleton<ConsoleChatRunner>();
         services.AddSingleton<EquipmentRulesEvaluationRunner>();
 
         return services;
-    }
+    }   
 
     public static IChatClient CreateChatClient(IServiceProvider serviceProvider)
     {
@@ -87,6 +88,7 @@ public static class DependencyInjection
         }
     }
 
+    //Specefic OpenAI client used with assistant.
     private static OpenAIClient CreateOpenAIClient(IServiceProvider serviceProvider)
     {
         var options = serviceProvider.GetRequiredService<IOptions<AiOptions>>().Value;
@@ -97,6 +99,8 @@ public static class DependencyInjection
         return openAiClient;
     }
 
+
+    //Specefic Azure OpenAI client used with assistant.
     private static AzureOpenAIClient CreateAzureOpenAIClient(IServiceProvider serviceProvider)
     {
         var options = serviceProvider.GetRequiredService<IOptions<AiOptions>>().Value;

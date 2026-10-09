@@ -11,11 +11,10 @@ bool runEquipmentRulesEvaluation = args.Contains(
     evaluationArgument,
     StringComparer.OrdinalIgnoreCase);
 
-string[] hostArgs = args
+string[] hostArgs = [.. args
     .Where(argument => !argument.Equals(
         evaluationArgument,
-        StringComparison.OrdinalIgnoreCase))
-    .ToArray();
+        StringComparison.OrdinalIgnoreCase))];
 
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(

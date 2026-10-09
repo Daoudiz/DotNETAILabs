@@ -120,102 +120,14 @@ namespace DotNetIALabs.Presentation.Labs
         }
 
 
-        public async Task RunSimpleFunctionCallAsync(
-            CancellationToken cancellationToken)
-        {          
-
-
-            List<ChatMessage> chatHistory = [new(ChatRole.System, """
-                            You are a hiking enthusiast who helps people discover fun hikes in their area. You are upbeat and friendly.   
-                            When the user asks about current weather, you MUST call the
-                            get_current_weather tool before answering.
-                            Never claim that you cannot access current weather.
-                            """)];
-
-            // Weather conversation relevant to the registered function.
-            chatHistory.Add(new ChatMessage(ChatRole.User,
-                "I live in Montreal and I'm looking for a moderate intensity hike. What's the current weather like?"));
-            Console.WriteLine($"{chatHistory.Last().Role} >>> {chatHistory.Last()}");
-
-            ChatResponse response = await chatClient.GetResponseAsync(chatHistory, CreateChatOptionsWithFunction(), cancellationToken: cancellationToken);
-            Console.WriteLine($"Assistant >>> {response.Text}");
-
-        }
-
-        public async Task RunMultipleFunctionCallAsync(
-            CancellationToken cancellationToken)
-        {
-            List<ChatMessage> chatHistory = [new(ChatRole.System, """                
-                    You are a currency expert who help people find the exact value of a given currency in Moroccan Dirhams.
-                    """)];
-
-            // Weather conversation relevant to the registered function.
-            chatHistory.Add(new ChatMessage(ChatRole.User,
-                "I'm looking for the value of Euro in Moroccan Dirhams?"));
-            Console.WriteLine($"{chatHistory.Last().Role} >>> {chatHistory.Last()}");
-
-            ChatResponse response = await chatClient.GetResponseAsync(chatHistory, CreateChatOptionsWithMultiFunction(), cancellationToken: cancellationToken);
-            Console.WriteLine($"Assistant >>> {response.Text}");
-
-        }
-
+       
         private ChatOptions CreateChatOptions(float? temperature = null) => new()
         {
             MaxOutputTokens = _generation.MaxOutputTokens,
             Temperature = temperature ?? _generation.Temperature
         };
 
-        private ChatOptions CreateChatOptionsWithFunction() => new()
-        {
-            MaxOutputTokens = _generation.MaxOutputTokens,
-            Temperature = _generation.Temperature,
-
-            Tools = [AIFunctionFactory.Create((string location, string unit) =>
-                 {
-                    // Here you would call a weather API
-                    // to get the weather for the location.
-                     Console.WriteLine(
-                    $"Outil météo appelé : location={location}, unit={unit}");
-                    return "Periods of rain or drizzle, 15 C";
-                },
-                "get_current_weather",
-                "Gets the current weather in a given location")]
-
-        };
-
-        private ChatOptions CreateChatOptionsWithMultiFunction() => new()
-        {
-            MaxOutputTokens = _generation.MaxOutputTokens,
-            Temperature = _generation.Temperature,
-
-            Tools = [
-                
-                
-                AIFunctionFactory.Create((string location, string unit) =>
-                 {
-                    // Here you would call a weather API
-                    // to get the weather for the location.
-                     Console.WriteLine(
-                    $"Outil météo appelé : location={location}, unit={unit}");
-                    return "Periods of rain or drizzle, 15 C";
-                },
-                "get_current_weather",
-                "Gets the current weather in a given location"),
-                
-                AIFunctionFactory.Create((string curruncy) =>
-                 {
-                    // Here you would call a currency API
-                    // to get the value of the given currency in Moroccan Dirahms.
-                     Console.WriteLine(
-                    $"Outil devise appelé : currency={curruncy}");
-                    return "The value of the currecny in Moroccan Dirhams is low";
-                },
-                "get_currency",
-                "Gets the current value of the currency")
-
-                ]
-
-        };
+       
 
     }
 }
