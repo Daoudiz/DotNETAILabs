@@ -4,6 +4,7 @@ using DotNetIALabs.Configuration;
 using DotNetIALabs.Evaluation;
 using DotNetIALabs.Presentation;
 using DotNetIALabs.Presentation.Labs;
+using DotNetIALabs.Presentation.Labs.PromptEngineeringLabs;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

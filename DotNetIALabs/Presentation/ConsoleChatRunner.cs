@@ -3,6 +3,7 @@ using DotNetIALabs.Presentation.Labs;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualBasic.FileIO;
+using DotNetIALabs.Presentation.Labs.PromptEngineeringLabs;
 
 namespace DotNetIALabs.Presentation
 {
@@ -125,9 +126,19 @@ namespace DotNetIALabs.Presentation
                 case "13":
                     await promptPrincipalesLabs.RunTactic4Fewshot(cancellationToken);
                     break;
+                case "14":
+                    await promptPrincipalesLabs.RunTactic1SpecifySteps(cancellationToken);
+                    break;
+                case "15":
+                    await promptPrincipalesLabs.RunTactic2InstructOwnSolution(cancellationToken);
+                    break;
+                case "16":
+                    await promptPrincipalesLabs.RunHallucinationSample(cancellationToken);
+                    break;
+
                 default:
                     Console.WriteLine(
-                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 13.");
+                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 14.");
                     break;
             }
         }
@@ -136,26 +147,29 @@ namespace DotNetIALabs.Presentation
         {
             Console.WriteLine();
             Console.WriteLine("Veuillez choisir le lab :");
-            Console.WriteLine("***************************** Simple chat *********************************");
+            Console.WriteLine("***************************** Simple chat **********************************");
             Console.WriteLine("1. Se connecter à un modèle d'IA et le solliciter");
             Console.WriteLine("2. Générer une application de conversation");
             Console.WriteLine("3. Demander une sortie structurée");
 
-            Console.WriteLine("************************ Recherche vectorielle******************************");
+            Console.WriteLine("************************ Recherche vectorielle ******************************");
             Console.WriteLine("4. Recherche vectorielle services Azure");
             Console.WriteLine("5. Recherche vectorielle règles équipements");
 
-            Console.WriteLine("************************ Appel des fonctions ********************************");
+            Console.WriteLine("************************ Appel des fonctions *********************************");
             Console.WriteLine("6. Appeler une fonction .NET à l'aide d'un modèle");
             Console.WriteLine("7. Appeler une fonction .NET à l'aide d'un modèle avec multi-fonctions");
             Console.WriteLine("8. Appeler manuellement une fonction créer avec AIFunctionFactory");
             Console.WriteLine("9. Appeler une fonction créer avec AIFunctionFactory via Assitant AI");
 
-            Console.WriteLine("***************** Principes prompts efficaces ********************************");
-            Console.WriteLine("10. Tactic 1: Use delimiters to clearly indicate distinct parts of the input");
-            Console.WriteLine("11. Tactic 2: Ask the model to generate structured output");
-            Console.WriteLine("12. Tactic 3: Ask the model to check whether conditions are satisfied");
-            Console.WriteLine("13. Tactic 4: 'Few-shot' prompting");
+            Console.WriteLine("***************** Prompt Engineeeing******************************************");
+            Console.WriteLine("10. Pr1-Tactic 1: Use delimiters to clearly indicate distinct parts of the input");
+            Console.WriteLine("11. Pr1-Tactic 2: Ask the model to generate structured output");
+            Console.WriteLine("12. Pr1-Tactic 3: Ask the model to check whether conditions are satisfied");
+            Console.WriteLine("13. Pr1-Tactic 4: 'Few-shot' prompting");
+            Console.WriteLine("14. Pr2-Tactic 1: Specify the steps required to complete a task");
+            Console.WriteLine("15. Pr2-Tactic 2: Instruct the model to work out its own solution before rushing to a conclusion");
+            Console.WriteLine("16. Model Limitations: Hallucinations");
 
 
             Console.WriteLine("exit ou quit. Quitter");
