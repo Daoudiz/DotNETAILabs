@@ -135,6 +135,18 @@ namespace DotNetIALabs.Presentation
                 case "16":
                     await promptPrincipalesLabs.RunHallucinationSample(cancellationToken);
                     break;
+                case "17":
+                    await promptPrincipalesLabs.RunIterativePrompt(cancellationToken);
+                    break;
+                case "18":
+                    await promptPrincipalesLabs.RunSummarizePrompt(cancellationToken);
+                    break;
+                case "19":
+                    await promptPrincipalesLabs.RunInferringPrompt(cancellationToken);
+                    break;
+                case "20":
+                    await promptPrincipalesLabs.RunExpandingPrompt(cancellationToken);
+                    break;
 
                 default:
                     Console.WriteLine(
@@ -170,6 +182,10 @@ namespace DotNetIALabs.Presentation
             Console.WriteLine("14. Pr2-Tactic 1: Specify the steps required to complete a task");
             Console.WriteLine("15. Pr2-Tactic 2: Instruct the model to work out its own solution before rushing to a conclusion");
             Console.WriteLine("16. Model Limitations: Hallucinations");
+            Console.WriteLine("17. Iterative prompts");
+            Console.WriteLine("18. Summarizing prompts");
+            Console.WriteLine("19. Inferring prompts");
+            Console.WriteLine("20. Expanding prompts");
 
 
             Console.WriteLine("exit ou quit. Quitter");
