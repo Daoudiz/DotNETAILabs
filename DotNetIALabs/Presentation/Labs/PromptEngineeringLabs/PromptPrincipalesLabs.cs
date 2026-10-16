@@ -797,7 +797,7 @@ namespace DotNetIALabs.Presentation.Labs.PromptEngineeringLabs
             ChatResponse response = await chatClient.GetResponseAsync(prompt, CreateChatOptions(), cancellationToken);
 
             Console.WriteLine(response.Text);
-        }
+        }        
 
         private ChatOptions CreateChatOptions(float? temperature = null) => new()
         {

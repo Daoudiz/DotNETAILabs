@@ -1,9 +1,10 @@
 ﻿using DotNetIALabs.Configuration;
 using DotNetIALabs.Presentation.Labs;
+using DotNetIALabs.Presentation.Labs.PromptEngineeringLabs;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualBasic.FileIO;
-using DotNetIALabs.Presentation.Labs.PromptEngineeringLabs;
+using System.ComponentModel.Design;
 
 namespace DotNetIALabs.Presentation
 {
@@ -12,7 +13,8 @@ namespace DotNetIALabs.Presentation
         ChatLabs chatLabs,
         VectorSearchLab vectorSearchLab,
         FunctionsCallLabs functionCallLab,
-        PromptPrincipalesLabs promptPrincipalesLabs)
+        PromptPrincipalesLabs promptPrincipalesLabs,
+        ChatBotLabs chatBotLabs)
     {      
 
         public async Task RunAsync(CancellationToken cancellationToken )
@@ -147,6 +149,18 @@ namespace DotNetIALabs.Presentation
                 case "20":
                     await promptPrincipalesLabs.RunExpandingPrompt(cancellationToken);
                     break;
+                case "21":
+                    await chatBotLabs.RunUndestandRoles(cancellationToken);
+                    break;
+                case "22":
+                    await chatBotLabs.RunSimulateRoles(cancellationToken);
+                    break;
+                case "23":
+                    await chatBotLabs.RunOrderBot(cancellationToken);
+                    break;
+                case "24":
+                    await chatBotLabs.RunOrderBotWithIChatClient(cancellationToken);
+                    break;
 
                 default:
                     Console.WriteLine(
@@ -186,8 +200,10 @@ namespace DotNetIALabs.Presentation
             Console.WriteLine("18. Summarizing prompts");
             Console.WriteLine("19. Inferring prompts");
             Console.WriteLine("20. Expanding prompts");
-
-
+            Console.WriteLine("21. Undestand chat roles ");
+            Console.WriteLine("22. Simuler la mémoire en fournissant l'historique");
+            Console.WriteLine("23. OrderBot: chatbot de prise de commandes de pizza");
+            Console.WriteLine("24. OrderBot: chatbot de prise de commandes de pizza aveec IChatClient");
             Console.WriteLine("exit ou quit. Quitter");
             Console.Write("Choix : ");
         }
