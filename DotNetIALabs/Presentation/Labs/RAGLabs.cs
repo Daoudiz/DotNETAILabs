@@ -19,8 +19,7 @@ namespace DotNetIALabs.Presentation.Labs
             IOptions<AiOptions> aiOptions,
             IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
     {
-
-        private readonly GenerationOptions _generation = aiOptions.Value.Generation;
+        
         public async Task RunDataIngetionPipline(CancellationToken cancellationToken)
         {
             //configure document reader
@@ -82,7 +81,6 @@ namespace DotNetIALabs.Presentation.Labs
                 Console.WriteLine($"Completed processing '{result.DocumentId}'." +
                     $"Succeeded: '\r\n{{result.Succeeded}}\r\n'.");
             }
-
 
             //Search the vector store collection and display results 
             VectorStoreCollection<object, Dictionary<string,object?>> collection = 
