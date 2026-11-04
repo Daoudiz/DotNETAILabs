@@ -39,7 +39,7 @@ namespace DotNetIALabs.Presentation.Labs
             IngestionDocumentProcessor imageAlternativeTextEnricher = new ImageAlternativeTextEnricher(enricherOptions);
 
             //configurer le chunker qui fractionne les documents en blocs sémantiques (chunks)
-            IngestionChunkerOptions chunkerOptions = new(TiktokenTokenizer.CreateForModel(aiOptions.Value.Providers.Ollama.Model))
+            IngestionChunkerOptions chunkerOptions = new(TiktokenTokenizer.CreateForModel(Helpers.GetActiveModel(aiOptions.Value)))
             {
                 MaxTokensPerChunk = 2000,
                 OverlapTokens = 0

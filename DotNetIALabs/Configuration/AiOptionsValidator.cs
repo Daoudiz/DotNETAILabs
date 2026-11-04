@@ -92,6 +92,10 @@ namespace DotNetIALabs.Configuration
                 "AI:Providers:AzureOpenAI:Deployment",
                 errors);
             Require(
+                options.Model,
+                "AI:Providers:AzureOpenAI:Model",
+                errors);
+            Require(
                     options.EmbeddingDeployment,
                     "AI:Providers:AzureOpenAI:EmbeddingDeployment",
                     errors);

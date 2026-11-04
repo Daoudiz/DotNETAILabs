@@ -34,5 +34,25 @@ namespace DotNetIALabs.Configuration
             throw new InvalidOperationException(
                 $"Fournisseur AI inconnu : '{options.Provider}'.");
         }
+
+        public static string GetActiveModel(AiOptions options)
+        {
+            string model = string.Empty;
+
+            switch(options.Provider)
+            {
+                case ("Ollama"):
+                    model = options.Providers.Ollama.Model;
+                    break;
+                case ("OpenAI"):
+                    model = options.Providers.OpenAI.Model;
+                    break;
+                case ("AzureOpenAI"):
+                    model = options.Providers.AzureOpenAI.Model;
+                    break;
+            }
+
+            return model;
+        }
     }
 }

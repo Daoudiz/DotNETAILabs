@@ -56,6 +56,7 @@ public sealed class AzureOpenAiOptions
 {
     // Nom du déploiement Azure, pas nécessairement celui du modèle.
     public string Deployment { get; init; } = string.Empty;
+    public string Model { get; init; } = string.Empty;
     public string EmbeddingDeployment { get; init; } = string.Empty;
     public int EmbeddingDimensions { get; init; }
     public string Endpoint { get; init; } = string.Empty;
