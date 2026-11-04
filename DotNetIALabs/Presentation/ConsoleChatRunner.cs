@@ -14,7 +14,8 @@ namespace DotNetIALabs.Presentation
         VectorSearchLab vectorSearchLab,
         FunctionsCallLabs functionCallLab,
         PromptPrincipalesLabs promptPrincipalesLabs,
-        ChatBotLabs chatBotLabs)
+        ChatBotLabs chatBotLabs,
+        RAGLabs rAGLabs)
     {      
 
         public async Task RunAsync(CancellationToken cancellationToken )
@@ -161,6 +162,9 @@ namespace DotNetIALabs.Presentation
                 case "24":
                     await chatBotLabs.RunOrderBotWithIChatClient(cancellationToken);
                     break;
+                case "25":
+                    await rAGLabs.RunDataIngetionPipline(cancellationToken);
+                    break;
 
                 default:
                     Console.WriteLine(
@@ -204,6 +208,10 @@ namespace DotNetIALabs.Presentation
             Console.WriteLine("22. Simuler la mémoire en fournissant l'historique");
             Console.WriteLine("23. OrderBot: chatbot de prise de commandes de pizza");
             Console.WriteLine("24. OrderBot: chatbot de prise de commandes de pizza aveec IChatClient");
+
+            Console.WriteLine("******************* Ingestion des données et RAG ******************************");
+            Console.WriteLine("25. Data Ingestion sample using SQLite vector store");
+
             Console.WriteLine("exit ou quit. Quitter");
             Console.Write("Choix : ");
         }

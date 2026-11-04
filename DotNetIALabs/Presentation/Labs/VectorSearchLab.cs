@@ -10,13 +10,15 @@ using System.Runtime.InteropServices;
 
 namespace DotNetIALabs.Presentation.Labs
 {
-    public sealed class VectorSearchLab 
+    public sealed class VectorSearchLab  
     {
         private const string EquipmentRulesCollectionName = "EquipmentRules";
         private const int EquipmentRulesCandidateCount = 3;
         private const double EquipmentRulesMinimumScore = 0.43;
         private const double EquipmentRulesAmbiguityDelta = 0.0085;
 
+        private readonly Helpers _helpers;
+        
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
         private readonly AiOptions _aiOptions;
         private readonly int _embeddingDimensions;
@@ -27,13 +29,14 @@ namespace DotNetIALabs.Presentation.Labs
         
 
       
-        public VectorSearchLab(
+        public VectorSearchLab(            
             IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
             IOptions<AiOptions> aiOptions)
         {
+            
             _embeddingGenerator = embeddingGenerator;
             _aiOptions = aiOptions.Value;
-            _embeddingDimensions = GetActiveEmbeddingDimensions(_aiOptions);
+            _embeddingDimensions = Helpers.GetActiveEmbeddingDimensions(_aiOptions);
 
             _equipmentRules =
                 _vectorStore.GetCollection<int, EquipmentRulesRecord>(
@@ -43,7 +46,7 @@ namespace DotNetIALabs.Presentation.Labs
 
         public async Task RunSearchAzureServicesAsync(CancellationToken cancellationToken)
         {
-            int dimensions = GetActiveEmbeddingDimensions(_aiOptions);
+            int dimensions = Helpers.GetActiveEmbeddingDimensions(_aiOptions);
             VectorStoreCollectionDefinition definition = CreateDefinition(dimensions);
 
             InMemoryVectorStore vectoreStore = new();
@@ -122,28 +125,7 @@ namespace DotNetIALabs.Presentation.Labs
 
                 if (prompt.Equals("bye", StringComparison.OrdinalIgnoreCase))
                 {
-                    //Console.WriteLine("Historique des recherches :");
-
-                    //for (int i = 0; i < searchHistory.Count; i++)
-                    //{
-                    //    (string searchedPrompt, List<EquipmentRuleMatch> searchedMatches) =
-                    //        searchHistory[i];
-
-                    //    Console.WriteLine($"{i + 1}. Question : {searchedPrompt}");
-
-                    //    if (searchedMatches.Count == 0)
-                    //    {
-                    //        Console.WriteLine("   Aucun résultat suffisamment pertinent.");
-                    //        continue;
-                    //    }
-
-                    //    foreach (EquipmentRuleMatch match in searchedMatches)
-                    //    {
-                    //        Console.WriteLine(
-                    //            $"   - {match.Record.Name} | Score : {match.Score:F4}");
-                    //    }
-                    //}
-
+                   
                     break;
                 }
 
@@ -185,69 +167,7 @@ namespace DotNetIALabs.Presentation.Labs
                         Console.WriteLine($"  {bestMatch.Record.Rule}");
                         break;
                 }
-
-                //ReadOnlyMemory<float> promptEmbedding = await GenerateVectorAsync(
-                //    prompt,
-                //    _embeddingDimensions,
-                //    cancellationToken);
-
-                //List<EquipmentRuleMatch> matches = [];
-
-                //await foreach (VectorSearchResult<EquipmentRulesRecord> result in
-                //    _equipmentRules.SearchAsync(
-                //        promptEmbedding,
-                //        top: EquipmentRulesCandidateCount,
-                //        cancellationToken: cancellationToken))
-                //{
-
-
-
-
-                //    if (result.Score >= EquipmentRulesMinimumScore)
-                //    {
-                //        matches.Add(new EquipmentRuleMatch(
-                //            result.Record,
-                //            result.Score));
-                //    }                  
-                //}
-
-                //searchHistory.Add((prompt, matches));
-
-                //if (matches.Count == 0)
-                //{
-                //    Console.WriteLine(
-                //        "Le registre ne contient pas de règle suffisamment pertinente " +
-                //        "pour cette question. Précisez votre demande.");
-                //    continue;
-                //}          
-
-                //bool isAmbiguous = matches.Count >= 2
-                //        && matches[0].Score - matches[1].Score
-                //            <= EquipmentRulesAmbiguityDelta;
-
-                //if (isAmbiguous)
-                //{
-                //    Console.WriteLine(
-                //        "Plusieurs règles peuvent correspondre. " +
-                //        "Précisez le sujet concerné :");
-
-                //    foreach (EquipmentRuleMatch match in matches)
-                //    {
-                //        Console.WriteLine(
-                //            $"- {match.Record.Name} (score : {match.Score:F4})");
-                //    }
-
-                //    continue;
-                //}
-
-                //Console.WriteLine("Règles pertinentes :");
-
-                //foreach (EquipmentRuleMatch match in matches)
-                //{
-                //    Console.WriteLine($"- {match.Record.Name}");
-                //    Console.WriteLine($"  Score : {match.Score:F4}");
-                //    Console.WriteLine($"  {match.Record.Rule}");
-                //}
+               
             }
 
         }
@@ -328,34 +248,7 @@ namespace DotNetIALabs.Presentation.Labs
             ]
             };
 
-        private static int GetActiveEmbeddingDimensions(AiOptions options)
-        {
-            string provider = options.Provider.Trim();
-
-            if (provider.Equals(
-                AiOptions.OllamaProvider,
-                StringComparison.OrdinalIgnoreCase))
-            {
-                return options.Providers.Ollama.EmbeddingDimensions;
-            }
-
-            if (provider.Equals(
-                AiOptions.OpenAiProvider,
-                StringComparison.OrdinalIgnoreCase))
-            {
-                return options.Providers.OpenAI.EmbeddingDimensions;
-            }
-
-            if (provider.Equals(
-                AiOptions.AzureOpenAiProvider,
-                StringComparison.OrdinalIgnoreCase))
-            {
-                return options.Providers.AzureOpenAI.EmbeddingDimensions;
-            }
-
-            throw new InvalidOperationException(
-                $"Fournisseur AI inconnu : '{options.Provider}'.");
-        }
+       
 
         private static string BuildEquipmentRuleIndexText(
     EquipmentRuleSeed seed) =>

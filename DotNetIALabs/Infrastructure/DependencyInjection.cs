@@ -38,13 +38,15 @@ public static class DependencyInjection
         services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
             CreateEmbeddingGenerator);
 
+        services.AddSingleton<Helpers>();
         services.AddSingleton<ChatLabs>();
         services.AddSingleton<VectorSearchLab>();
         services.AddSingleton<FunctionsCallLabs>();
         services.AddSingleton<PromptPrincipalesLabs>();
         services.AddSingleton<ChatApi>();
         //services.AddSingleton<OrderBot>(provider => ActivatorUtilities.CreateInstance<OrderBot>(provider,""));             
-        services.AddSingleton<ChatBotLabs>();        
+        services.AddSingleton<ChatBotLabs>();
+        services.AddSingleton<RAGLabs>();
         services.AddSingleton<ConsoleChatRunner>();
         services.AddSingleton<EquipmentRulesEvaluationRunner>();
 
