@@ -1,10 +1,7 @@
 ﻿using DotNetIALabs.Configuration;
 using DotNetIALabs.Presentation.Labs;
 using DotNetIALabs.Presentation.Labs.PromptEngineeringLabs;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualBasic.FileIO;
-using System.ComponentModel.Design;
 
 namespace DotNetIALabs.Presentation
 {
@@ -163,12 +160,12 @@ namespace DotNetIALabs.Presentation
                     await chatBotLabs.RunOrderBotWithIChatClient(cancellationToken);
                     break;
                 case "25":
-                    await rAGLabs.RunDataIngetionPipline(cancellationToken);
+                    await rAGLabs.RunDataIngestionPipeline(cancellationToken);
                     break;
 
                 default:
                     Console.WriteLine(
-                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 14.");
+                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 25.");
                     break;
             }
         }

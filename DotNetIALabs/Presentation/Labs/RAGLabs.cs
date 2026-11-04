@@ -1,5 +1,4 @@
 ﻿using DotNetIALabs.Configuration;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Chunkers;
@@ -8,9 +7,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Microsoft.ML.Tokenizers;
 using Microsoft.SemanticKernel.Connectors.SqliteVec;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DotNetIALabs.Presentation.Labs
 {
@@ -20,7 +16,7 @@ namespace DotNetIALabs.Presentation.Labs
             IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
     {
         
-        public async Task RunDataIngetionPipline(CancellationToken cancellationToken)
+        public async Task RunDataIngestionPipeline(CancellationToken cancellationToken)
         {
             //configure document reader
             IngestionDocumentReader reader = new MarkdownReader();
@@ -31,16 +27,21 @@ namespace DotNetIALabs.Presentation.Labs
 
             EnricherOptions enricherOptions = new(chatClient)
             {
+                ChatOptions = new ChatOptions
+                {
+                    Temperature = aiOptions.Value.Generation.Temperature,
+                    MaxOutputTokens = aiOptions.Value.Generation.MaxOutputTokens
+                },
                 LoggerFactory = loggerFactory
-
             };
 
             IngestionDocumentProcessor imageAlternativeTextEnricher = new ImageAlternativeTextEnricher(enricherOptions);
 
             //configurer le chunker qui fractionne les documents en blocs sémantiques (chunks)
-            IngestionChunkerOptions chunkerOptions = new(TiktokenTokenizer.CreateForModel(Helpers.GetActiveModel(aiOptions.Value)))
+            Tokenizer tokenizer = TiktokenTokenizer.CreateForEncoding("o200k_base");
+            IngestionChunkerOptions chunkerOptions = new(tokenizer)
             {
-                MaxTokensPerChunk = 2000,
+                MaxTokensPerChunk = 400,
                 OverlapTokens = 0
             };
             IngestionChunker<string> chunker = new SemanticSimilarityChunker(embeddingGenerator, chunkerOptions);
@@ -76,10 +77,12 @@ namespace DotNetIALabs.Presentation.Labs
             string repositoryPath = Path.Combine(solutionRoot, "Data");
             await foreach (IngestionResult result in pipeline.ProcessAsync(
                 new DirectoryInfo(repositoryPath),
-                searchPattern: "*.md"))
+                searchPattern: "*.md",
+                cancellationToken: cancellationToken))
             {
-                Console.WriteLine($"Completed processing '{result.DocumentId}'." +
-                    $"Succeeded: '\r\n{{result.Succeeded}}\r\n'.");
+                Console.WriteLine(
+                    $"Completed processing '{result.DocumentId}'. " +
+                    $"Succeeded: {result.Succeeded}.");
             }
 
             //Search the vector store collection and display results 
@@ -89,16 +92,23 @@ namespace DotNetIALabs.Presentation.Labs
             while(true)
             {
                 Console.WriteLine("Enter your question (or 'exit' to quit :");
-                string? searchValue = Console.ReadLine();
+                string? searchValue = await Console.In.ReadLineAsync(
+                    cancellationToken);
 
-                if(string.IsNullOrEmpty(searchValue) || searchValue == "exit")
+                if (string.IsNullOrWhiteSpace(searchValue) ||
+                    searchValue.Equals("exit", StringComparison.OrdinalIgnoreCase))
                 {
                     break;
                 }
 
+                searchValue = searchValue.Trim();
+
                 Console.WriteLine("Searching...\n");
                 await foreach (VectorSearchResult<Dictionary<string, object?>> result in 
-                    collection.SearchAsync(searchValue, top:3))
+                    collection.SearchAsync(
+                        searchValue,
+                        top: 3,
+                        cancellationToken: cancellationToken))
                 {
                     Console.WriteLine($"Score: {result.Score}\n\tcontent: {result.Record["content"]}");
                 }
