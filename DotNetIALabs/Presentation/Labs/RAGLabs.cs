@@ -1,4 +1,5 @@
 ﻿using DotNetIALabs.Configuration;
+using CommunityToolkit.VectorData.SqliteVec;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Chunkers;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Microsoft.ML.Tokenizers;
-using Microsoft.SemanticKernel.Connectors.SqliteVec;
+using System.Runtime.CompilerServices;
 
 namespace DotNetIALabs.Presentation.Labs
 {
@@ -15,6 +16,8 @@ namespace DotNetIALabs.Presentation.Labs
             IOptions<AiOptions> aiOptions,
             IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
     {
+        private const string CollectionName = "data-with-summary-v1";
+
         
         public async Task RunDataIngestionPipeline(CancellationToken cancellationToken)
         {
@@ -25,13 +28,16 @@ namespace DotNetIALabs.Presentation.Labs
             using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole());
 
 
+            ChatOptions enrichmentChatOptions = new()
+            {
+                Temperature = 0,
+                Seed = 42,
+                MaxOutputTokens = aiOptions.Value.Generation.MaxOutputTokens
+            };
+
             EnricherOptions enricherOptions = new(chatClient)
             {
-                ChatOptions = new ChatOptions
-                {
-                    Temperature = aiOptions.Value.Generation.Temperature,
-                    MaxOutputTokens = aiOptions.Value.Generation.MaxOutputTokens
-                },
+                ChatOptions = enrichmentChatOptions,
                 LoggerFactory = loggerFactory
             };
 
@@ -47,7 +53,11 @@ namespace DotNetIALabs.Presentation.Labs
             IngestionChunker<string> chunker = new SemanticSimilarityChunker(embeddingGenerator, chunkerOptions);
 
             //Configure chunk processor to generate summaries for each chunk
-            IngestionChunkProcessor<string> summaryEnricher = new SummaryEnricher(enricherOptions);
+            IngestionChunkProcessor<string> summaryEnricher =
+                new SingleChunkSummaryEnricher(
+                    chatClient,
+                    enrichmentChatOptions,
+                    loggerFactory.CreateLogger<SingleChunkSummaryEnricher>());
 
             // configure SQLite Vector Store to stock embeddings vectors
             using SqliteVectorStore vectorStore = new (
@@ -61,7 +71,7 @@ namespace DotNetIALabs.Presentation.Labs
             using VectorStoreWriter<string> writer = new(
                 vectorStore,
                 dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
-                new VectorStoreWriterOptions { CollectionName = "data"});
+                new VectorStoreWriterOptions { CollectionName = CollectionName });
 
             //Compose data ingestion pipeline 
             using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory)
@@ -113,6 +123,49 @@ namespace DotNetIALabs.Presentation.Labs
                     Console.WriteLine($"Score: {result.Score}\n\tcontent: {result.Record["content"]}");
                 }
 
+            }
+        }
+
+        private sealed class SingleChunkSummaryEnricher(
+            IChatClient chatClient,
+            ChatOptions chatOptions,
+            ILogger<SingleChunkSummaryEnricher> logger)
+            : IngestionChunkProcessor<string>
+        {
+            public override async IAsyncEnumerable<IngestionChunk<string>> ProcessAsync(
+                IAsyncEnumerable<IngestionChunk<string>> chunks,
+                [EnumeratorCancellation] CancellationToken cancellationToken = default)
+            {
+                await foreach (IngestionChunk<string> chunk in
+                    chunks.WithCancellation(cancellationToken))
+                {
+                    try
+                    {
+                        ChatResponse response = await chatClient.GetResponseAsync(
+                            $"""
+                            Summarize the following text in one concise paragraph.
+                            Return only the summary text, without JSON, a list, or commentary.
+
+                            {chunk.Content}
+                            """,
+                            chatOptions,
+                            cancellationToken);
+
+                        if (!string.IsNullOrWhiteSpace(response.Text))
+                        {
+                            chunk.Metadata["summary"] = response.Text.Trim();
+                        }
+                    }
+                    catch (Exception exception)
+                        when (exception is not OperationCanceledException)
+                    {
+                        logger.LogWarning(
+                            exception,
+                            "The summary could not be generated for one chunk.");
+                    }
+
+                    yield return chunk;
+                }
             }
         }
     }
