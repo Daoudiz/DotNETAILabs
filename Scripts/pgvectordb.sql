@@ -1,0 +1,15 @@
+CREATE ROLE raguser
+WITH LOGIN
+PASSWORD 'rag@230977';
+
+CREATE DATABASE raglabdb
+    WITH OWNER = raguser
+    ENCODING = 'UTF8'
+    TEMPLATE = template0;
+	
+CREATE EXTENSION IF NOT EXISTS vector
+WITH SCHEMA public;
+
+CREATE SCHEMA rag AUTHORIZATION rag_user;
+
+GRANT USAGE ON SCHEMA public TO rag_user;
