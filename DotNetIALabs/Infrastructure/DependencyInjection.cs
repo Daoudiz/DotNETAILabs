@@ -9,6 +9,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using CommunityToolkit.VectorData.PgVector;
 using OllamaSharp;
 using OpenAI;
 using System;
@@ -37,6 +38,17 @@ public static class DependencyInjection
 
         services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
             CreateEmbeddingGenerator);
+
+        string vectorStoreConnectionString =configuration.GetConnectionString("VectorStore") ?? throw new InvalidOperationException(
+                                "La chaîne de connexion 'ConnectionStrings:VectorStore' est absente.");
+
+        if (string.IsNullOrWhiteSpace(vectorStoreConnectionString))
+        {
+            throw new InvalidOperationException(
+                "La chaîne de connexion 'ConnectionStrings:VectorStore' est vide.");
+        }
+
+        services.AddPostgresVectorStore(vectorStoreConnectionString);
 
         services.AddSingleton<Helpers>();
         services.AddSingleton<ChatLabs>();

@@ -14,7 +14,8 @@ namespace DotNetIALabs.Presentation.Labs
     public sealed class RAGLabs (
             IChatClient chatClient,
             IOptions<AiOptions> aiOptions,
-            IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator)
+            IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+            VectorStore vectorStore)
     {
         private const string CollectionName = "data-with-summary-v1";
 
@@ -60,18 +61,30 @@ namespace DotNetIALabs.Presentation.Labs
                     loggerFactory.CreateLogger<SingleChunkSummaryEnricher>());
 
             // configure SQLite Vector Store to stock embeddings vectors
-            using SqliteVectorStore vectorStore = new (
-                "Data Source=vectors.db;Pooling=false",
-                new()
-                { 
-                    EmbeddingGenerator = embeddingGenerator 
-                });
+            //using SqliteVectorStore vectorStore = new (
+            //    "Data Source=vectors.db;Pooling=false",
+            //    new()
+            //    { 
+            //        EmbeddingGenerator = embeddingGenerator 
+            //    });
 
             // The writer requires the embeddding dimension count to be specified
-            using VectorStoreWriter<string> writer = new(
-                vectorStore,
-                dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
-                new VectorStoreWriterOptions { CollectionName = CollectionName });
+            //using VectorStoreWriter<string> writer = new(
+            //    vectorStore,
+            //    dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
+            //    new VectorStoreWriterOptions { CollectionName = CollectionName });
+
+            //Configure the writer with pgvector
+            using VectorStoreWriter<string> writer = new( vectorStore, dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
+                new VectorStoreWriterOptions
+                {
+                    CollectionName = CollectionName,
+                    DistanceFunction = DistanceFunction.CosineDistance,
+                    IndexKind = IndexKind.Hnsw,
+                    IncrementalIngestion = true
+
+                });
+
 
             //Compose data ingestion pipeline 
             using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory)
