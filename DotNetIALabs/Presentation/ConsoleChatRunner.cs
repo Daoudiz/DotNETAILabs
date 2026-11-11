@@ -207,7 +207,7 @@ namespace DotNetIALabs.Presentation
             Console.WriteLine("24. OrderBot: chatbot de prise de commandes de pizza aveec IChatClient");
 
             Console.WriteLine("******************* Ingestion des données et RAG ******************************");
-            Console.WriteLine("25. Data Ingestion sample using SQLite vector store");
+            Console.WriteLine("25. Data Ingestion sample using PostgreSQL/pgvector");
 
             Console.WriteLine("exit ou quit. Quitter");
             Console.Write("Choix : ");

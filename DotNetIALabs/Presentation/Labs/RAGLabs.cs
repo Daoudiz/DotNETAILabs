@@ -1,5 +1,4 @@
 ﻿using DotNetIALabs.Configuration;
-using CommunityToolkit.VectorData.SqliteVec;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Chunkers;
@@ -60,29 +59,16 @@ namespace DotNetIALabs.Presentation.Labs
                     enrichmentChatOptions,
                     loggerFactory.CreateLogger<SingleChunkSummaryEnricher>());
 
-            // configure SQLite Vector Store to stock embeddings vectors
-            //using SqliteVectorStore vectorStore = new (
-            //    "Data Source=vectors.db;Pooling=false",
-            //    new()
-            //    { 
-            //        EmbeddingGenerator = embeddingGenerator 
-            //    });
-
-            // The writer requires the embeddding dimension count to be specified
-            //using VectorStoreWriter<string> writer = new(
-            //    vectorStore,
-            //    dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
-            //    new VectorStoreWriterOptions { CollectionName = CollectionName });
-
-            //Configure the writer with pgvector
-            using VectorStoreWriter<string> writer = new( vectorStore, dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
+            // Configure the writer with PostgreSQL/pgvector.
+            using VectorStoreWriter<string> writer = new(
+                vectorStore,
+                dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
                 new VectorStoreWriterOptions
                 {
                     CollectionName = CollectionName,
                     DistanceFunction = DistanceFunction.CosineDistance,
                     IndexKind = IndexKind.Hnsw,
                     IncrementalIngestion = true
-
                 });
 
 
@@ -93,19 +79,35 @@ namespace DotNetIALabs.Presentation.Labs
                 ChunkProcessors = { summaryEnricher }
             };
 
-            //Process all documents from repository
-            string solutionRoot = Path.GetFullPath(
-                    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+            // Process all documents from the repository.
+            DirectoryInfo repository = FindDataDirectory();
+            int processedDocumentCount = 0;
 
-            string repositoryPath = Path.Combine(solutionRoot, "Data");
+            Console.WriteLine($"Reading documents from '{repository.FullName}'.");
+
             await foreach (IngestionResult result in pipeline.ProcessAsync(
-                new DirectoryInfo(repositoryPath),
+                repository,
                 searchPattern: "*.md",
                 cancellationToken: cancellationToken))
             {
+                processedDocumentCount++;
+
                 Console.WriteLine(
                     $"Completed processing '{result.DocumentId}'. " +
                     $"Succeeded: {result.Succeeded}.");
+
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Ingestion failed for '{result.DocumentId}'. " +
+                        "Check the preceding error in the logs.");
+                }
+            }
+
+            if (processedDocumentCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"No Markdown document was found in '{repository.FullName}'.");
             }
 
             //Search the vector store collection and display results 
@@ -133,10 +135,43 @@ namespace DotNetIALabs.Presentation.Labs
                         top: 3,
                         cancellationToken: cancellationToken))
                 {
-                    Console.WriteLine($"Score: {result.Score}\n\tcontent: {result.Record["content"]}");
+                    Console.WriteLine(
+                        $"Distance: {result.Score}\n\tcontent: {result.Record["content"]}");
                 }
 
             }
+        }
+
+        private static DirectoryInfo FindDataDirectory()
+        {
+            string[] startPaths =
+            [
+                AppContext.BaseDirectory,
+                Directory.GetCurrentDirectory()
+            ];
+
+            foreach (string startPath in startPaths.Distinct(
+                StringComparer.OrdinalIgnoreCase))
+            {
+                DirectoryInfo? currentDirectory = new(startPath);
+
+                while (currentDirectory is not null)
+                {
+                    DirectoryInfo dataDirectory = new(
+                        Path.Combine(currentDirectory.FullName, "Data"));
+
+                    if (dataDirectory.Exists &&
+                        dataDirectory.EnumerateFiles("*.md").Any())
+                    {
+                        return dataDirectory;
+                    }
+
+                    currentDirectory = currentDirectory.Parent;
+                }
+            }
+
+            throw new DirectoryNotFoundException(
+                "The Data directory containing Markdown documents could not be found.");
         }
 
         private sealed class SingleChunkSummaryEnricher(
