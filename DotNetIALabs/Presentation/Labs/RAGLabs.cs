@@ -41,6 +41,7 @@ namespace DotNetIALabs.Presentation.Labs
                 LoggerFactory = loggerFactory
             };
 
+            // Configuration de l'enrechisseur du document pour produire une description textuelle des images
             IngestionDocumentProcessor imageAlternativeTextEnricher = new ImageAlternativeTextEnricher(enricherOptions);
 
             //configurer le chunker qui fractionne les documents en blocs sémantiques (chunks)
@@ -50,7 +51,8 @@ namespace DotNetIALabs.Presentation.Labs
                 MaxTokensPerChunk = 400,
                 OverlapTokens = 0
             };
-            IngestionChunker<string> chunker = new SemanticSimilarityChunker(embeddingGenerator, chunkerOptions);
+            IngestionChunker<string> chunker = 
+                new SemanticSimilarityChunker(embeddingGenerator, chunkerOptions);
 
             //Configure chunk processor to generate summaries for each chunk
             IngestionChunkProcessor<string> summaryEnricher =
