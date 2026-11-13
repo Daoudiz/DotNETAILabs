@@ -15,7 +15,7 @@ namespace DotNetIALabs.Presentation.Labs
             IChatClient chatClient,
             IOptions<AiOptions> aiOptions,
             IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
-            PdfDocumentReader reader,
+            PdfDocumentReader pdfreader,
             VectorStore vectorStore)
     {
         private const string CollectionName = "data-with-summary-v1";
@@ -201,7 +201,7 @@ namespace DotNetIALabs.Presentation.Labs
 
 
             //Compose data ingestion pipeline 
-            using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory)
+            using IngestionPipeline<string> pipeline = new(pdfreader, chunker, writer, loggerFactory: loggerFactory)
             {
                 DocumentProcessors = { imageAlternativeTextEnricher },
                 ChunkProcessors = { summaryEnricher }
