@@ -1,4 +1,5 @@
 ﻿using DotNetIALabs.Configuration;
+using DotNetIALabs.Infrastructure;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DataIngestion;
 using Microsoft.Extensions.DataIngestion.Chunkers;
@@ -14,6 +15,7 @@ namespace DotNetIALabs.Presentation.Labs
             IChatClient chatClient,
             IOptions<AiOptions> aiOptions,
             IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
+            PdfDocumentReader reader,
             VectorStore vectorStore)
     {
         private const string CollectionName = "data-with-summary-v1";
@@ -132,6 +134,130 @@ namespace DotNetIALabs.Presentation.Labs
 
                 Console.WriteLine("Searching...\n");
                 await foreach (VectorSearchResult<Dictionary<string, object?>> result in 
+                    collection.SearchAsync(
+                        searchValue,
+                        top: 3,
+                        cancellationToken: cancellationToken))
+                {
+                    Console.WriteLine(
+                        $"Distance: {result.Score}\n\tcontent: {result.Record["content"]}");
+                }
+
+            }
+        }
+
+
+        public async Task RunPdfDataIngestionPipeline(CancellationToken cancellationToken)
+        {         
+
+
+            using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole());
+
+
+            ChatOptions enrichmentChatOptions = new()
+            {
+                Temperature = 0,
+                Seed = 42,
+                MaxOutputTokens = aiOptions.Value.Generation.MaxOutputTokens
+            };
+
+            EnricherOptions enricherOptions = new(chatClient)
+            {
+                ChatOptions = enrichmentChatOptions,
+                LoggerFactory = loggerFactory
+            };
+
+            // Configuration de l'enrechisseur du document pour produire une description textuelle des images
+            IngestionDocumentProcessor imageAlternativeTextEnricher = new ImageAlternativeTextEnricher(enricherOptions);
+
+            //configurer le chunker qui fractionne les documents en blocs sémantiques (chunks)
+            Tokenizer tokenizer = TiktokenTokenizer.CreateForEncoding("o200k_base");
+            IngestionChunkerOptions chunkerOptions = new(tokenizer)
+            {
+                MaxTokensPerChunk = 400,
+                OverlapTokens = 0
+            };
+            IngestionChunker<string> chunker =
+                new SemanticSimilarityChunker(embeddingGenerator, chunkerOptions);
+
+            //Configure chunk processor to generate summaries for each chunk
+            IngestionChunkProcessor<string> summaryEnricher =
+                new SingleChunkSummaryEnricher(
+                    chatClient,
+                    enrichmentChatOptions,
+                    loggerFactory.CreateLogger<SingleChunkSummaryEnricher>());
+
+            // Configure the writer with PostgreSQL/pgvector.
+            using VectorStoreWriter<string> writer = new(
+                vectorStore,
+                dimensionCount: Helpers.GetActiveEmbeddingDimensions(aiOptions.Value),
+                new VectorStoreWriterOptions
+                {
+                    CollectionName = CollectionName,
+                    DistanceFunction = DistanceFunction.CosineDistance,
+                    IndexKind = IndexKind.Hnsw,
+                    IncrementalIngestion = true
+                });
+
+
+            //Compose data ingestion pipeline 
+            using IngestionPipeline<string> pipeline = new(reader, chunker, writer, loggerFactory: loggerFactory)
+            {
+                DocumentProcessors = { imageAlternativeTextEnricher },
+                ChunkProcessors = { summaryEnricher }
+            };
+
+            // Process all documents from the repository.
+            DirectoryInfo repository = FindDataDirectory();
+            int processedDocumentCount = 0;
+
+            Console.WriteLine($"Reading documents from '{repository.FullName}'.");
+
+            await foreach (IngestionResult result in pipeline.ProcessAsync(
+                repository,
+                searchPattern: "*.pdf",
+                cancellationToken: cancellationToken))
+            {
+                processedDocumentCount++;
+
+                Console.WriteLine(
+                    $"Completed processing '{result.DocumentId}'. " +
+                    $"Succeeded: {result.Succeeded}.");
+
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Ingestion failed for '{result.DocumentId}'. " +
+                        "Check the preceding error in the logs.");
+                }
+            }
+
+            if (processedDocumentCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"No Pdf document was found in '{repository.FullName}'.");
+            }
+
+            //Search the vector store collection and display results 
+            VectorStoreCollection<object, Dictionary<string, object?>> collection =
+                writer.VectorStoreCollection;
+
+            while (true)
+            {
+                Console.WriteLine("Enter your question (or 'exit' to quit :");
+                string? searchValue = await Console.In.ReadLineAsync(
+                    cancellationToken);
+
+                if (string.IsNullOrWhiteSpace(searchValue) ||
+                    searchValue.Equals("exit", StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
+                searchValue = searchValue.Trim();
+
+                Console.WriteLine("Searching...\n");
+                await foreach (VectorSearchResult<Dictionary<string, object?>> result in
                     collection.SearchAsync(
                         searchValue,
                         top: 3,

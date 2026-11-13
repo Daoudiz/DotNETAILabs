@@ -162,10 +162,13 @@ namespace DotNetIALabs.Presentation
                 case "25":
                     await rAGLabs.RunDataIngestionPipeline(cancellationToken);
                     break;
+                case "26":
+                    await rAGLabs.RunPdfDataIngestionPipeline(cancellationToken);
+                    break;
 
                 default:
                     Console.WriteLine(
-                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 25.");
+                        $"Choix inconnu : '{choice}'. Sélectionnez 1 à 26.");
                     break;
             }
         }
@@ -208,6 +211,7 @@ namespace DotNetIALabs.Presentation
 
             Console.WriteLine("******************* Ingestion des données et RAG ******************************");
             Console.WriteLine("25. Data Ingestion sample using PostgreSQL/pgvector");
+            Console.WriteLine("26. Pdf data Ingestion sample using PostgreSQL/pgvector");
 
             Console.WriteLine("exit ou quit. Quitter");
             Console.Write("Choix : ");

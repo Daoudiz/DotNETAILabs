@@ -66,6 +66,7 @@ public static class DependencyInjection
         services.AddSingleton<ChatApi>();
         //services.AddSingleton<OrderBot>(provider => ActivatorUtilities.CreateInstance<OrderBot>(provider,""));             
         services.AddSingleton<ChatBotLabs>();
+        services.AddSingleton<PdfDocumentReader>();
         services.AddSingleton<RAGLabs>();
         services.AddSingleton<ConsoleChatRunner>();
         services.AddSingleton<EquipmentRulesEvaluationRunner>();
