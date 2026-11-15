@@ -59,3 +59,6 @@ Chat -> embeddings -> vector search -> ingestion -> RAG -> PostgreSQL/pgvector -
 ```
 
 Proposer l'impact architectural avant tout changement qui dépasse le lab actuel.
+## Documentations
+
+La documentation relative à ce projet doit être mise dans le répertoire docs/
