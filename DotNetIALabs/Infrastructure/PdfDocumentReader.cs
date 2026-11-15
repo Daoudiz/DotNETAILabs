@@ -14,20 +14,17 @@ namespace DotNetIALabs.Infrastructure
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            //Copie locale : le flx fourni reste sous la responsabilité de l'appelant
-            // PdfPig reçoit un flux seekable.
-            using var buffer = new MemoryStream();
-            source.CopyTo(buffer);
-            buffer.Position = 0;
-
-            using var pdf = PdfDocument.Open(buffer);
+            // PdfPig ne ferme pas le flux fourni par l'appelant. Si le flux
+            // n'est pas seekable, la bibliothèque crée elle-même un buffer.
+            using var pdf = PdfDocument.Open(source);
 
             var document = new IngestionDocument(identifier);
 
-            foreach(var page in pdf.GetPages())
+            for (int pageNumber = 1; pageNumber <= pdf.NumberOfPages; pageNumber++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                var page = pdf.GetPage(pageNumber);
                 var text = ContentOrderTextExtractor.GetText(page);
 
                 if (string.IsNullOrWhiteSpace(text))
@@ -42,6 +39,13 @@ namespace DotNetIALabs.Infrastructure
                     new IngestionDocumentParagraph(text));
 
                 document.Sections.Add(section);
+            }
+
+            if (document.Sections.Count == 0)
+            {
+                throw new InvalidDataException(
+                    $"No text could be extracted from PDF '{identifier}'. " +
+                    "The document may be scanned and require OCR.");
             }
 
             return Task.FromResult(document);

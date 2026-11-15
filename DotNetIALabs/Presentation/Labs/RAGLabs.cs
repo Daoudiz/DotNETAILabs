@@ -84,7 +84,9 @@ namespace DotNetIALabs.Presentation.Labs
             };
 
             // Process all documents from the repository.
-            DirectoryInfo repository = FindDataDirectory();
+            DirectoryInfo repository = FindDataDirectory(
+                searchPattern: "*.md",
+                documentType: "Markdown");
             int processedDocumentCount = 0;
 
             Console.WriteLine($"Reading documents from '{repository.FullName}'.");
@@ -161,15 +163,6 @@ namespace DotNetIALabs.Presentation.Labs
                 MaxOutputTokens = aiOptions.Value.Generation.MaxOutputTokens
             };
 
-            EnricherOptions enricherOptions = new(chatClient)
-            {
-                ChatOptions = enrichmentChatOptions,
-                LoggerFactory = loggerFactory
-            };
-
-            // Configuration de l'enrechisseur du document pour produire une description textuelle des images
-            IngestionDocumentProcessor imageAlternativeTextEnricher = new ImageAlternativeTextEnricher(enricherOptions);
-
             //configurer le chunker qui fractionne les documents en blocs sémantiques (chunks)
             Tokenizer tokenizer = TiktokenTokenizer.CreateForEncoding("o200k_base");
             IngestionChunkerOptions chunkerOptions = new(tokenizer)
@@ -203,12 +196,13 @@ namespace DotNetIALabs.Presentation.Labs
             //Compose data ingestion pipeline 
             using IngestionPipeline<string> pipeline = new(pdfreader, chunker, writer, loggerFactory: loggerFactory)
             {
-                DocumentProcessors = { imageAlternativeTextEnricher },
                 ChunkProcessors = { summaryEnricher }
             };
 
             // Process all documents from the repository.
-            DirectoryInfo repository = FindDataDirectory();
+            DirectoryInfo repository = FindDataDirectory(
+                searchPattern: "*.pdf",
+                documentType: "PDF");
             int processedDocumentCount = 0;
 
             Console.WriteLine($"Reading documents from '{repository.FullName}'.");
@@ -270,7 +264,9 @@ namespace DotNetIALabs.Presentation.Labs
             }
         }
 
-        private static DirectoryInfo FindDataDirectory()
+        private static DirectoryInfo FindDataDirectory(
+            string searchPattern,
+            string documentType)
         {
             string[] startPaths =
             [
@@ -289,7 +285,7 @@ namespace DotNetIALabs.Presentation.Labs
                         Path.Combine(currentDirectory.FullName, "Data"));
 
                     if (dataDirectory.Exists &&
-                        dataDirectory.EnumerateFiles("*.md").Any())
+                        dataDirectory.EnumerateFiles(searchPattern).Any())
                     {
                         return dataDirectory;
                     }
@@ -299,7 +295,8 @@ namespace DotNetIALabs.Presentation.Labs
             }
 
             throw new DirectoryNotFoundException(
-                "The Data directory containing Markdown documents could not be found.");
+                $"The Data directory containing {documentType} documents " +
+                "could not be found.");
         }
 
         private sealed class SingleChunkSummaryEnricher(
